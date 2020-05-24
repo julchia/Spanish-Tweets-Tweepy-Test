@@ -20,20 +20,19 @@ api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 def get_spanish_tweets(country, keyword, count):
     corpus = {}
     tweet_count = 0
-
     try:
         place = api.geo_search(query=country, granulaty='country')
         place_id = place[0].id
     except IndexError:
         place_id = None
-
-    while tweet_count != count:
+    while tweet_count < count:
         try:
             tweets = Cursor(api.search, 
                             q=keyword, 
                             place=place_id, 
                             lang='es', 
-                            include_entities=True, 
+                            include_entities=True,
+                            until = '2020-05-18', 
                             tweet_mode='extended').items(count)
             for tweet in tweets:
                 tweet = tweet._json
@@ -44,9 +43,9 @@ def get_spanish_tweets(country, keyword, count):
                 corpus.setdefault('Text', []).append(tweet['full_text'])
                 corpus.setdefault('Hashtags', []).append(tweet['entities']['hashtags'])
                 tweet_count += 1
+                print(tweet_count)
         except tweepy.TweepError:
             time.sleep(900)
             continue
-
     corpus_pd = pd.DataFrame({key:pd.Series(value) for key, value in corpus.items()})
     return corpus_pd.to_csv(r'.\argentine_tweets.csv', index=False)
